@@ -3,13 +3,15 @@ import { resolveApproval, getApproval } from "@/server/guardrails/approval";
 
 export const runtime = "nodejs";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const approval = await getApproval(params.id);
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const approval = await getApproval(id);
   if (!approval) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(approval);
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const body = await req.json().catch(() => ({}));
   const decision = body.decision;
 
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const resolvedBy = body.resolvedBy ?? "unknown";
 
   try {
-    const updated = await resolveApproval(params.id, decision, resolvedBy);
+    const updated = await resolveApproval(id, decision, resolvedBy);
     return NextResponse.json(updated);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
