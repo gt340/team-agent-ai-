@@ -86,7 +86,6 @@ async function runSpecialist(agentId: AgentId, event: InboundEvent): Promise<str
         .join("\n");
     }
 
-    const { name, input, id: toolUseId } = toolUse;
 
     let result: unknown;
 
