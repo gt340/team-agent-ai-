@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Bricolage Grotesque", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* {
+  scrollbar-color: #2a2e35 transparent;
+}
+
+html {
+  background: #0a0b0d;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #0a0b0d;
+  color: #f5f3ee;
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: #fa5d19;
+  color: #0a0b0d;
+}
+
+/* Visible keyboard focus — accessibility floor */
+:focus-visible {
+  outline: 2px solid #3dd9eb;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Glass surface — used sparingly on panels floating over the 3D scene */
+.glass-panel {
+  background: rgba(20, 22, 26, 0.55);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Neo-brutalist edge accent used on a handful of interactive elements */
+.edge-accent {
+  box-shadow: 4px 4px 0px 0px rgba(250, 93, 25, 0.9);
+  border: 1.5px solid rgba(245, 243, 238, 0.9);
+}
+
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.link-underline {
+  background-image: linear-gradient(#fa5d19, #fa5d19);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease;
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
