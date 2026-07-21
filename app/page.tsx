@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Nav from "@/components/Nav";
 import Hero3D from "@/components/Hero3D";
 import AgentConsole from "@/components/AgentConsole";
