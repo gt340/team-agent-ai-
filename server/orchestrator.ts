@@ -87,6 +87,7 @@ async function runSpecialist(agentId: AgentId, event: InboundEvent): Promise<str
     }
 
 
+    const { name, input, id: toolUseId } = toolUse as { name: string; input: unknown; id: string };
     let result: unknown;
 
     if (agent.requiresApproval.includes(name) && !isAutoApproved(event.tenantId, name)) {
