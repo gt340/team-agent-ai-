@@ -31,6 +31,7 @@ export default function Particles({ count = 900 }: { count?: number }) {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
+            args={[positions, 3]}
           count={count}
           array={positions}
           itemSize={3}
