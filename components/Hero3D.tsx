@@ -5,16 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 
-const Scene = dynamic(() => import("@/components/three/Scene"), {
-  ssr: false,
-  loading: () => (
-    <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-heat/40 blur-2xl" />
-  ),
-});
-
-export default function Hero3D() {
-  const pointer = useRef({ x: 0, y: 0 });
-  const [reduced, setReduced] = useState(false);
+const Scene = dynamic(() => import("@/components/three/Scene"), { ssr: false });
   const [lowPower, setLowPower] = useState(false);
 
   useEffect(() => {
