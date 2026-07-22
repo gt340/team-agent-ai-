@@ -6,6 +6,10 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 
 const Scene = dynamic(() => import("@/components/three/Scene"), { ssr: false });
+
+export default function Hero3D() {
+  const pointer = useRef({ x: 0, y: 0 });
+  const [reduced, setReduced] = useState(false);
   const [lowPower, setLowPower] = useState(false);
 
   useEffect(() => {
