@@ -39,10 +39,12 @@ export default function Scene({
   return (
     <>
       <ambientLight intensity={0.25} />
-      <TeamOrb pointer={pointer} />
+      <group scale={lowPower ? 0.6 : 1}>
+        <TeamOrb pointer={pointer} />
       {AGENTS.map((a) => (
         <AgentNode key={a.label} {...a} />
       ))}
+      </group>
       {!lowPower && <Particles count={reduced ? 300 : 900} />}
 
       {!lowPower && (
