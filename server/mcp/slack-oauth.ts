@@ -61,6 +61,7 @@ export function buildAuthorizeUrl(params: { state: string; codeChallenge: string
   url.searchParams.set("code_challenge", params.codeChallenge);
   url.searchParams.set("code_challenge_method", "S256");
   url.searchParams.set("user_scope", DEFAULT_SCOPES.join(","));
+  url.searchParams.set("scope", DEFAULT_SCOPES.join(" "));
   return url.toString();
 }
 
