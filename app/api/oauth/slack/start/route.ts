@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const { verifier, challenge } = generatePkcePair();
   const state = generateState();
-  savePendingAuth(state, { tenantId, codeVerifier: verifier });
+  await savePendingAuth(state, { tenantId, codeVerifier: verifier });
 
   const authorizeUrl = buildAuthorizeUrl({ state, codeChallenge: challenge, redirectUri });
   return NextResponse.redirect(authorizeUrl);

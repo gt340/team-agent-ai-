@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing code or state." }, { status: 400 });
   }
 
-  const pending = consumePendingAuth(state);
+  const pending = await consumePendingAuth(state);
   if (!pending) {
     return NextResponse.json({ error: "Unknown or expired OAuth state — start the flow again." }, { status: 400 });
   }
