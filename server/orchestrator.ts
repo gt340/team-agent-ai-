@@ -74,7 +74,7 @@ async function runSpecialist(agentId: AgentId, event: InboundEvent): Promise<str
       tools: tools.length ? tools : undefined,
       mcp_servers: mcpServers.length ? mcpServers : undefined,
       messages,
-    } as any);
+    } as any, { headers: { "anthropic-beta": "mcp-client-2025-04-04" } });
 
     const toolUse = response.content.find((b) => b.type === "tool_use");
 
