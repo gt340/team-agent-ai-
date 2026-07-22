@@ -44,7 +44,7 @@ export default function Hero3D() {
       </div>
 
       {/* overlay copy */}
-      <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-6 text-center">
+      <div className="relative z-20 mx-auto flex max-w-4xl flex-col items-center px-6 text-center">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
