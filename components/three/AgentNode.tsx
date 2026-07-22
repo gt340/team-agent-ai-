@@ -57,7 +57,7 @@ export default function AgentNode({ radius, speed, offset, tilt, label, color = 
         <sphereGeometry args={[0.11, 16, 16]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.8} />
         <Html distanceFactor={9} occlude={false} zIndexRange={[10, 0]}>
-          <div className="pointer-events-none select-none whitespace-nowrap rounded-full border border-white/10 bg-base-900/80 px-2.5 py-1 font-mono text-[10px] tracking-wide text-ink/80 backdrop-blur-sm">
+          <div className="hidden sm:block pointer-events-none select-none whitespace-nowrap rounded-full border border-white/10 bg-base-900/80 px-2.5 py-1 font-mono text-[10px] tracking-wide text-ink/80 backdrop-blur-sm">
             {label}
           </div>
         </Html>
