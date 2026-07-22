@@ -70,7 +70,7 @@ export default function Hero3D() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.22, ease: "easeOut" }}
-          className="mt-6 max-w-xl text-balance text-lg text-ink-muted rounded-2xl bg-base-950/50 backdrop-blur-sm px-4 py-3 -mx-4"
+          className="mt-6 max-w-xl text-balance text-lg text-white"
         >
           Atlas connects to every app, document, and workflow you run — and
           hands the work to a coordinated team of specialist agents who
