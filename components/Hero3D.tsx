@@ -5,7 +5,12 @@ import { Canvas } from "@react-three/fiber";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 
-const Scene = dynamic(() => import("@/components/three/Scene"), { ssr: false });
+const Scene = dynamic(() => import("@/components/three/Scene"), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-heat/40 blur-2xl" />
+  ),
+});
 
 export default function Hero3D() {
   const pointer = useRef({ x: 0, y: 0 });
@@ -27,7 +32,6 @@ export default function Hero3D() {
 
   return (
     <section className="relative flex h-[100svh] w-full items-center justify-center overflow-hidden bg-base-950">
-      {/* base gradient wash */}
       <div className="pointer-events-none absolute inset-0 bg-grid-fade" />
       <div className="pointer-events-none absolute inset-0 bg-orb-glow opacity-60" />
 
@@ -43,7 +47,6 @@ export default function Hero3D() {
         </Canvas>
       </div>
 
-      {/* overlay copy */}
       <div className="relative z-20 mx-auto flex max-w-4xl flex-col items-center px-6 text-center">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -102,7 +105,6 @@ export default function Hero3D() {
         Scroll
       </div>
 
-      {/* bottom fade into next section */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-base-950 to-transparent" />
     </section>
   );
