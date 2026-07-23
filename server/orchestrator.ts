@@ -76,6 +76,11 @@ async function runSpecialist(agentId: AgentId, event: InboundEvent): Promise<str
       messages,
     } as any, { headers: { "anthropic-beta": "mcp-client-2025-04-04" } });
 
+    const mcpCalls = response.content.filter((b: any) => b.type === "mcp_tool_use");
+    if (mcpCalls.length) {
+      console.log(`[mcp] agent=${agent.id} tools_called=${mcpCalls.map((b: any) => `${b.server_name}:${b.name}`).join(", ")}`);
+    }
+
     const toolUse = response.content.find((b) => b.type === "tool_use");
 
     if (!toolUse || response.stop_reason !== "tool_use") {
