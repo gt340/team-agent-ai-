@@ -31,7 +31,7 @@ human when the customer is angry, the issue involves billing disputes, or
 you are not confident in the answer — say so plainly rather than guessing.`,
     mcpServers: [
       { name: "zendesk", allowedTools: ["search_tickets", "reply_to_ticket", "update_ticket_status"] }, // zendesk not yet verified — inert until server config is filled in
-      { name: "slack", allowedTools: [] }, // [] = allow whatever mcp.slack.com exposes; narrow once you've inspected real tool names
+      { name: "slack", allowedTools: ["slack_search_channels", "slack_read_channel"] }, // read-only: search + read channel history, confirmed via [mcp] logs on 2026-07-23
     ],
     directTools: ["search_knowledge_base"],
     requiresApproval: [], // ticket replies are the product; kept low-friction by design
@@ -84,7 +84,7 @@ defined — you do not invent new automations on your own. Log every step
 you take and stop immediately if a step fails rather than improvising a
 workaround.`,
     mcpServers: [
-      { name: "slack", allowedTools: [] }, // [] = allow whatever mcp.slack.com exposes; narrow once verified
+      { name: "slack", allowedTools: ["slack_search_channels", "slack_read_channel"] }, // read-only: search + read channel history, confirmed via [mcp] logs on 2026-07-23
       { name: "gmail", allowedTools: ["send_email"] }, // gmail not yet verified — inert until server config is filled in
     ],
     directTools: ["run_workflow", "query_crm"],
