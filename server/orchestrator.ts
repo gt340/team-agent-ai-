@@ -10,7 +10,6 @@ export interface InboundEvent {
   tenantId: string;
   channel: "slack" | "email" | "dashboard" | "webhook";
   text: string;
-  /** Prior turns for this thread/conversation, oldest first. */
   history?: { role: "user" | "assistant"; content: string }[];
 }
 
@@ -24,17 +23,10 @@ export interface AuditEntry {
   timestamp: string;
 }
 
-// TODO: replace with a real sink (append-only table, log pipeline).
-// This is what the Dashboard Preview's "Team activity" feed reads from.
 async function logAudit(entry: AuditEntry) {
   console.log("[audit]", JSON.stringify(entry));
 }
 
-/**
- * Step 1 — Supervisor: decide which specialist should handle this event.
- * Runs on claude-opus-4-8 for the judgment call; cheap enough since it's
- * one short call per inbound event, not per tool call.
- */
 async function route(event: InboundEvent): Promise<AgentId> {
   const response = await anthropic.messages.create({
     model: "claude-opus-4-8",
@@ -46,14 +38,9 @@ Reply with exactly one agent id and nothing else: support, docs, code, flow, ins
 
   const text = response.content.find((b) => b.type === "text");
   const id = (text && "text" in text ? text.text.trim().toLowerCase() : "") as AgentId;
-  return id in AGENTS ? id : "support"; // safe default
+  return id in AGENTS ? id : "support";
 }
 
-/**
- * Step 2 — Specialist run: the actual tool_use loop for one agent. Keeps
- * calling Claude and executing tools until it returns a final text
- * response (or an unresolved approval blocks further progress).
- */
 async function runSpecialist(agentId: AgentId, event: InboundEvent): Promise<string> {
   const agent = AGENTS[agentId];
 
@@ -65,35 +52,38 @@ async function runSpecialist(agentId: AgentId, event: InboundEvent): Promise<str
     { role: "user", content: event.text },
   ];
 
-  // Bounded loop — never let a misbehaving tool chain run forever.
   for (let turn = 0; turn < 8; turn++) {
-    const response = await anthropic.messages.create({
-      model: agent.model,
-      max_tokens: 2048,
-      system: agent.systemPrompt,
-      tools: tools.length ? tools : undefined,
-      mcp_servers: mcpServers.length ? mcpServers : undefined,
-      messages,
-    } as any, { headers: { "anthropic-beta": "mcp-client-2025-04-04" } });
+    const response = await anthropic.messages.create(
+      {
+        model: agent.model,
+        max_tokens: 2048,
+        system: agent.systemPrompt,
+        tools: tools.length ? tools : undefined,
+        mcp_servers: mcpServers.length ? mcpServers : undefined,
+        messages,
+      } as any,
+      { headers: { "anthropic-beta": "mcp-client-2025-04-04" } }
+    );
 
     const mcpCalls = response.content.filter((b: any) => b.type === "mcp_tool_use");
     if (mcpCalls.length) {
-      console.log(`[mcp] agent=${agent.id} tools_called=${mcpCalls.map((b: any) => `${b.server_name}:${b.name}`).join(", ")}`);
+      console.log(
+        `[mcp] agent=${agent.id} tools_called=${mcpCalls.map((b: any) => `${b.server_name}:${b.name}`).join(", ")}`
+      );
     }
 
     const toolUse = response.content.find((b) => b.type === "tool_use");
 
     if (!toolUse || response.stop_reason !== "tool_use") {
-      // Final answer — collect all text blocks.
       return response.content
         .filter((b) => b.type === "text")
         .map((b: any) => b.text)
         .join("\n");
     }
 
-
     const { name, input, id: toolUseId } = toolUse as { name: string; input: unknown; id: string };
     let result: unknown;
+    let isToolError = false;
 
     if (agent.requiresApproval.includes(name) && !isAutoApproved(event.tenantId, name)) {
       const approval = await requestApproval({
@@ -110,12 +100,16 @@ async function runSpecialist(agentId: AgentId, event: InboundEvent): Promise<str
       };
       await logAudit({ tenantId: event.tenantId, agentId, toolName: name, input, approvalStatus: "pending", timestamp: new Date().toISOString() });
     } else if (TOOLS[name]) {
-      result = await TOOLS[name].execute(input, { tenantId: event.tenantId });
-      await logAudit({ tenantId: event.tenantId, agentId, toolName: name, input, output: result, timestamp: new Date().toISOString() });
+      try {
+        result = await TOOLS[name].execute(input, { tenantId: event.tenantId });
+        await logAudit({ tenantId: event.tenantId, agentId, toolName: name, input, output: result, timestamp: new Date().toISOString() });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        isToolError = true;
+        result = { error: message };
+        await logAudit({ tenantId: event.tenantId, agentId, toolName: name, input, output: { error: message }, timestamp: new Date().toISOString() });
+      }
     } else {
-      // Tool wasn't a direct tool — it was handled server-side by the MCP
-      // connector already, and Claude's response will include the
-      // mcp_tool_result block automatically. Nothing to execute here.
       messages.push({ role: "assistant", content: response.content });
       continue;
     }
@@ -123,21 +117,19 @@ async function runSpecialist(agentId: AgentId, event: InboundEvent): Promise<str
     messages.push({ role: "assistant", content: response.content });
     messages.push({
       role: "user",
-      content: [{ type: "tool_result", tool_use_id: toolUseId, content: JSON.stringify(result) }],
+      content: [{ type: "tool_result", tool_use_id: toolUseId, content: JSON.stringify(result), is_error: isToolError }],
     });
   }
 
   return "I wasn't able to finish this within the expected number of steps — flagging for review.";
 }
 
-/** Entry point: route + run + log, for one inbound event. */
 export async function handleEvent(event: InboundEvent): Promise<{ agentId: AgentId; response: string }> {
   const agentId = await route(event);
   const response = await runSpecialist(agentId, event);
   return { agentId, response };
 }
 
-/** Optional pre-routing triage for high-volume channels (e.g. tag urgency before Support picks it up). */
 export async function triage(event: InboundEvent): Promise<{ urgency: "low" | "normal" | "high" }> {
   const response = await anthropic.messages.create({
     model: TRIAGE_MODEL,
