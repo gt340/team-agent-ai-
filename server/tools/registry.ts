@@ -116,8 +116,145 @@ export const TOOLS: Record<string, ToolDefinition> = {
       throw new Error(`query_crm not implemented (tenant=${ctx.tenantId})`);
     },
   },
+
+  // --- GitHub write actions -------------------------------------------
+  //
+  // WHY THESE ARE DIRECT TOOLS, NOT MCP ALLOWED_TOOLS:
+  // MCP-connected tool calls execute inside the same Messages API turn
+  // Claude calls them in — our backend never sees a pre-execution moment
+  // to intercept. requiresApproval only works for direct tools, whose
+  // execute() we control. These call GitHub's REST API directly with a
+  // separate write-scoped token (GITHUB_WRITE_TOKEN), so approval is real.
+
+  github_create_pull_request: {
+    name: "github_create_pull_request",
+    description:
+      "Open a pull request on the connected GitHub repository. Requires human approval before it actually runs.",
+    input_schema: {
+      type: "object",
+      properties: {
+        owner: { type: "string", description: "Repository owner (user or org)" },
+        repo: { type: "string" },
+        title: { type: "string" },
+        head: { type: "string", description: "Branch containing the changes" },
+        base: { type: "string", description: "Branch to merge into, e.g. main" },
+        body: { type: "string", description: "PR description" },
+        draft: { type: "boolean", default: false },
+      },
+      required: ["owner", "repo", "title", "head", "base"],
+    },
+    execute: async (input) => {
+      const token = requireGithubWriteToken();
+      const res = await fetch(`https://api.github.com/repos/${input.owner}/${input.repo}/pulls`, {
+        method: "POST",
+        headers: githubWriteHeaders(token),
+        body: JSON.stringify({
+          title: input.title,
+          head: input.head,
+          base: input.base,
+          body: input.body,
+          draft: input.draft ?? false,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(`GitHub create_pull_request failed (${res.status}): ${JSON.stringify(data)}`);
+      return { number: data.number, url: data.html_url, state: data.state };
+    },
+  },
+
+  github_add_issue_comment: {
+    name: "github_add_issue_comment",
+    description:
+      "Add a comment to a GitHub issue or pull request. Requires human approval before it actually runs.",
+    input_schema: {
+      type: "object",
+      properties: {
+        owner: { type: "string" },
+        repo: { type: "string" },
+        issue_number: { type: "integer", description: "Issue or PR number" },
+        body: { type: "string" },
+      },
+      required: ["owner", "repo", "issue_number", "body"],
+    },
+    execute: async (input) => {
+      const token = requireGithubWriteToken();
+      const res = await fetch(
+        `https://api.github.com/repos/${input.owner}/${input.repo}/issues/${input.issue_number}/comments`,
+        { method: "POST", headers: githubWriteHeaders(token), body: JSON.stringify({ body: input.body }) }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(`GitHub add_issue_comment failed (${res.status}): ${JSON.stringify(data)}`);
+      return { id: data.id, url: data.html_url };
+    },
+  },
+
+  // --- Slack write action ----------------------------------------------
+  // Same reasoning as above. Uses SLACK_WRITE_TOKEN — a separate bot
+  // token from the read-only OAuth token behind the MCP connection.
+
+  slack_post_message: {
+    name: "slack_post_message",
+    description:
+      "Post a message to a Slack channel or thread. Requires human approval before it actually runs.",
+    input_schema: {
+      type: "object",
+      properties: {
+        channel: { type: "string", description: "Channel ID (e.g. C0123456) — not a #name" },
+        text: { type: "string" },
+        thread_ts: { type: "string", description: "Optional — reply within this thread" },
+      },
+      required: ["channel", "text"],
+    },
+    execute: async (input) => {
+      const token = process.env.SLACK_WRITE_TOKEN;
+      if (!token) throw new Error("SLACK_WRITE_TOKEN is not configured — see .env.example.");
+      const res = await fetch("https://slack.com/api/chat.postMessage", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({ channel: input.channel, text: input.text, thread_ts: input.thread_ts }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(`Slack chat.postMessage failed: ${JSON.stringify(data)}`);
+      return { channel: data.channel, ts: data.ts };
+    },
+  },
+
+  send_email: {
+    name: "send_email",
+    description: "Send an email on the tenant's behalf. Requires human approval before it actually runs.",
+    input_schema: {
+      type: "object",
+      properties: {
+        to: { type: "string" },
+        subject: { type: "string" },
+        body: { type: "string" },
+      },
+      required: ["to", "subject", "body"],
+    },
+    execute: async (input, ctx) => {
+      throw new Error(`send_email not implemented (tenant=${ctx.tenantId})`);
+    },
+  },
 };
 
+
+function requireGithubWriteToken() {
+  const token = process.env.GITHUB_WRITE_TOKEN;
+  if (!token) throw new Error("GITHUB_WRITE_TOKEN is not configured — see .env.example.");
+  return token;
+}
+
+function githubWriteHeaders(token) {
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "Content-Type": "application/json",
+  };
+}
 /** Returns Claude-ready tool schemas (name/description/input_schema only) for a given tool name list. */
 export function getToolSchemas(names: string[]) {
   return names.map((n) => {

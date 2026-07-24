@@ -33,8 +33,8 @@ you are not confident in the answer — say so plainly rather than guessing.`,
       { name: "zendesk", allowedTools: ["search_tickets", "reply_to_ticket", "update_ticket_status"] }, // zendesk not yet verified — inert until server config is filled in
       { name: "slack", allowedTools: ["slack_search_channels", "slack_read_channel"] }, // read-only: search + read channel history, confirmed via [mcp] logs on 2026-07-23
     ],
-    directTools: ["search_knowledge_base"],
-    requiresApproval: [], // ticket replies are the product; kept low-friction by design
+    directTools: ["search_knowledge_base", "slack_post_message"],
+    requiresApproval: ["slack_post_message"], // ticket replies stay low-friction by design; escalation pings do not
   },
 
   docs: {
@@ -72,8 +72,8 @@ one.`,
     mcpServers: [
       { name: "github", allowedTools: [] }, // [] = allow whatever the readonly server exposes
     ],
-    directTools: ["run_test_suite"],
-    requiresApproval: [], // no write tools attached yet — nothing to gate
+    directTools: ["run_test_suite", "github_create_pull_request", "github_add_issue_comment"],
+    requiresApproval: ["github_create_pull_request", "github_add_issue_comment"],
   },
 
   flow: {
@@ -85,10 +85,9 @@ you take and stop immediately if a step fails rather than improvising a
 workaround.`,
     mcpServers: [
       { name: "slack", allowedTools: ["slack_search_channels", "slack_read_channel"] }, // read-only: search + read channel history, confirmed via [mcp] logs on 2026-07-23
-      { name: "gmail", allowedTools: ["send_email"] }, // gmail not yet verified — inert until server config is filled in
     ],
-    directTools: ["run_workflow", "query_crm"],
-    requiresApproval: ["send_email", "run_workflow"],
+    directTools: ["run_workflow", "query_crm", "slack_post_message", "send_email"],
+    requiresApproval: ["send_email", "run_workflow", "slack_post_message"],
   },
 
   insight: {
