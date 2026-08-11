@@ -241,13 +241,13 @@ export const TOOLS: Record<string, ToolDefinition> = {
 };
 
 
-function requireGithubWriteToken() {
+function requireGithubWriteToken(): string {
   const token = process.env.GITHUB_WRITE_TOKEN;
   if (!token) throw new Error("GITHUB_WRITE_TOKEN is not configured — see .env.example.");
   return token;
 }
 
-function githubWriteHeaders(token) {
+function githubWriteHeaders(token: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
     Accept: "application/vnd.github+json",
